@@ -34,6 +34,17 @@ export class UsersController {
   async findAllUsers() {
     return this.usersService.findAllUsers();
   }
+
+  // 🚀 Nuevo endpoint de login
+  @Post('login')
+  async login(@Body() body: { email: string; password: string }) {
+    const user = await this.usersService.validateUser(body.email, body.password);
+    if (!user) {
+      return { error: 'Credenciales incorrectas' };
+    }
+    return user; // Más adelante aquí puedes devolver también un JWT
+  }
+  
 }
 import { Injectable } from '@nestjs/common';
 import { createPool, Pool } from 'mysql2/promise';

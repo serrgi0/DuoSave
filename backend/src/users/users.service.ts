@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { createPool, Pool } from 'mysql2/promise';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -18,23 +19,44 @@ export class UsersService {
   
   // Create user
   async create(dto: CreateUserDto) {
-  const [result] = await this.pool.query(
-    'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-    [dto.username, dto.email, dto.password],
-  );
+    // Hash para la contraseña (cifrado con bcrypt)
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const [result] = await this.pool.query(
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+      [dto.username, dto.email, hashedPassword],
+    );
 
-  console.log('Insert result:', result); // 👈 Debug
+    return { id: (result as any).insertId, userName: dto.username, email: dto.email };
+  }
 
-  return { id: (result as any).insertId, ...dto };
+  //buscar ususario por email
+  async findByEmail(email: string) {
+    const [rows] = await this.pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    return (rows as any)[0] ?? null;
+  }
+
+  //validad Login
+  async validateUser(email: string, password: string) {
+    const user = await this.findByEmail(email);
+    if (!user) return null;
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return null;
+    return { id: user.id, username: user.username, email: user.email };
   }
 
   // Update user
   async update(id: number, dto: UpdateUserDto) {
+
+    let hashedPassword = dto.password;
+    if (dto.password) {
+      hashedPassword = await bcrypt.hash(dto.password, 10);
+    }
+
     await this.pool.query(
       'UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?',
-      [dto.username, dto.email, dto.password, id],
+      [dto.username, dto.email, hashedPassword ?? dto.password, id],
     );
-    return { id, ...dto };
+    return { id, username: dto.username, email: dto.email };
   }
 
   // Delete user
