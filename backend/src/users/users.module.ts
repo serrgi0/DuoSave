@@ -5,6 +5,6 @@ import { UsersController } from './users.controller';
 //Registra Controller y Service en el módulo de usuarios
 @Module({
   providers: [UsersService],
-  controllers: [UsersController]
+  controllers: [UsersController],
 })
 export class UsersModule {}
