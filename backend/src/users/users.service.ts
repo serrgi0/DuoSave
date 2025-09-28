@@ -18,11 +18,14 @@ export class UsersService {
   
   // Create user
   async create(dto: CreateUserDto) {
-    const [result] = await this.pool.query(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-      [dto.username, dto.email, dto.password],
-    );
-    return { id: (result as any).insertId, ...dto };
+  const [result] = await this.pool.query(
+    'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+    [dto.username, dto.email, dto.password],
+  );
+
+  console.log('Insert result:', result); // 👈 Debug
+
+  return { id: (result as any).insertId, ...dto };
   }
 
   // Update user
